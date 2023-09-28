@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import os
 import argparse
+import validators
 
 
 ####                 Spider Program
@@ -73,7 +74,9 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
-    extract_urls(BeautifulSoup(requests.get(base_url, timeout=5).content, "html.parser"), base_url, max_depth)
+    if not validators.url(args.url):
+        print("Invalid Url")
+        exit(1)
     # if args.recursive:
     #     spidey_scrap(base_url, max_depth, save_path)
     # else:
