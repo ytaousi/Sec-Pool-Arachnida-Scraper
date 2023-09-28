@@ -5,6 +5,10 @@ import os
 import argparse
 import validators
 import re
+import time
+import signal
+import sys
+from colorama import Fore
 
 
 ####                 Spider Program
@@ -17,61 +21,76 @@ import re
 
 extensions = ["jpg", "jpeg", "png", "gif", "bmp"]
 
-def extract_urls(base_url, depth, max_depth):
-    try:
-        res = requests.get(base_url)
-        if res.status_code == 200:
-            soup = BeautifulSoup(res.text, 'html.parser')
-            extract_urls = soup.find_all('a', href=re.compile('https?://'))
-            for l in extract_urls:
-                print(l.get('href'))
-            return extract_urls
-    except Exception as e:
-        print("Error during url extraction")
-        return
+def signal_handler(sig, frame):
+    sys.exit(1)
 
+def extract_urls(base_url, depth, max_depth):
+    extracted_urls = []
+
+    soup = BeautifulSoup(requests.get(base_url).text, 'html.parser')
+    a_tags = soup.find_all('a')
+    for a_tag in a_tags:
+        url_href = a_tag.get('href')
+        if re.search("https://", url_href):
+            extracted_urls.append(url_href)
+        elif re.search("http://", url_href):
+            extracted_urls.append(url_href)
+        else:
+            extracted_urls.append(urljoin(base_url, url_href))
+    print(Fore.RED + "urls found in [" + base_url + "]")
+    for l in extracted_urls:
+        print(Fore.BLUE + "[" + str(l) + "]")
+    time.sleep(6)
+    return extracted_urls
 
 def extract_images(url):
     extracted_urls = []
     res = requests.get(url)
-    soup = BeautifulSoup(res.text, "html.parser")
-    images_tags = soup.find_all("img")
-    for image_tag in images_tags:
-        image_src = image_tag.get('src') if image_tag.get('src') != None else image_tag.get('data-src')
-        extension = image_src.split("/")[-1].split(".")[-1] if image_tag.get('src') != None else image_src.split("/")[-1].split(".")[-1].split("?")[0]
-        if extension in extensions:
-            extracted_urls.append(image_src)
+    if res.status_code == 200:
+        soup = BeautifulSoup(res.text, "html.parser")
+        images_tags = soup.find_all("img")
+        for image_tag in images_tags:
+            image_src = image_tag.get('src') if image_tag.get('src') != None else image_tag.get('data-src')
+            extension = image_src.split("/")[-1].split(".")[-1] if image_tag.get('src') != None else image_src.split("/")[-1].split(".")[-1].split("?")[0]
+            if extension in extensions:
+                extracted_urls.append(image_src)
+    print(Fore.RED + "images found in [" + url + "]")
+    for l in extracted_urls:
+        print(Fore.BLUE + "[" + str(l) + "]")
+    time.sleep(6)
     return extracted_urls
 
-def download_images(extracted_images_url, save_path):
+def download_images(extracted_images_url, current, save_path):
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     for image_url in extracted_images_url:
-        res = requests.get(image_url)
-        if image_data.status_code == 200:
-            print("you have a nice body")
-        else:
-            print("not a valid url")
-        image_data = requests.get(image_url).content
-        filename = os.path.join(save_path, image_url.split("/")[-1])
-        with open(filename, "wb") as file:
-            file.write(image_data)
-            print(f"Downloaded: {filename}")
+        print(Fore.YELLOW + "file getting downloaded")
+        # full_path = urljoin(current, image_url)
+        # res = requests.get(full_path)
+        # if res.status_code == 200:
+        #     image_data = requests.get(full_path).content
+        #     filename = os.path.join(save_path, image_url.split("/")[-1])
+        #     with open(filename, "wb") as file:
+        #         file.write(image_data)
+        #         print(f"Downloaded: {filename}")
 
 def spidey_scrap(base_url, max_depth, save_path):
     res = requests.get(base_url, timeout=5)
     soup = BeautifulSoup(res.content, "html.parser")
     urls = [(base_url, 0)]
     for url in urls:
-        # print(url)
         current, depth = urls.pop(0)
+        print(depth,max_depth)
+        print(Fore.GREEN + "url to be scrapped : [" + str(current) + "]")
         extracted_images_urls = extract_images(current)
-        download_images(extracted_images_urls, save_path)
-        if depth < max_depth:
+        download_images(extracted_images_urls, current, save_path)
+        while depth < max_depth:
             new_urls = extract_urls(current, depth + 1, max_depth)
             urls.extend([(url, depth + 1) for url in new_urls])
+            depth += 1
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
     parser = argparse.ArgumentParser(description="Spider Program to download images recursively from a website.")
     parser.add_argument("url", help="The URL of the website to scrape")
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively download images")
@@ -86,8 +105,7 @@ if __name__ == "__main__":
     if not validators.url(args.url):
         print("Invalid Url")
         exit(1)
-    extract_urls(base_url, 4, max_depth)
-    # if args.recursive:
-    #     spidey_scrap(base_url, max_depth, save_path)
-    # else:
-    #     print("Recursive option not specified. Use '-r' to enable recursive scraping.")
+    if args.recursive:
+        spidey_scrap(base_url, max_depth, save_path)
+    else:
+        spidey_scrap(base_url, 0, save_path)
