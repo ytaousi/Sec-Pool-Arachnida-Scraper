@@ -31,15 +31,19 @@ def extract_urls(base_url, depth, max_depth):
     a_tags = soup.find_all('a')
     for a_tag in a_tags:
         url_href = a_tag.get('href')
-        if re.search("https://", url_href):
-            extracted_urls.append(url_href)
-        elif re.search("http://", url_href):
-            extracted_urls.append(url_href)
-        else:
-            extracted_urls.append(urljoin(base_url, url_href))
-    print(Fore.RED + "urls found in [" + base_url + "]")
-    for l in extracted_urls:
-        print(Fore.BLUE + "[" + str(l) + "]")
+        if url_href != None:
+            if re.search("https://", url_href):
+                extracted_urls.append(url_href)
+            elif re.search("http://", url_href):
+                extracted_urls.append(url_href)
+            else:
+                extracted_urls.append(urljoin(base_url, url_href))
+    print(Fore.RED + "URLS Found In [" + base_url + "]")
+    if extract_urls:
+        for l in extracted_urls:
+            print(Fore.BLUE + "[" + str(l) + "]")
+    else:
+        print(Fore.GREEN + "No urls found in :[" + str(base_url) + "]")
     time.sleep(6)
     return extracted_urls
 
@@ -54,9 +58,12 @@ def extract_images(url):
             extension = image_src.split("/")[-1].split(".")[-1] if image_tag.get('src') != None else image_src.split("/")[-1].split(".")[-1].split("?")[0]
             if extension in extensions:
                 extracted_urls.append(image_src)
-    print(Fore.RED + "images found in [" + url + "]")
-    for l in extracted_urls:
-        print(Fore.BLUE + "[" + str(l) + "]")
+    print(Fore.RED + "Images Found In [" + url + "]")
+    if extracted_urls:
+        for l in extracted_urls:
+            print(Fore.BLUE + "[" + str(l) + "]")
+    else:
+        print(Fore.GREEN + "No Image found in :[" + str(url) + "]")
     time.sleep(6)
     return extracted_urls
 
@@ -64,7 +71,7 @@ def download_images(extracted_images_url, current, save_path):
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     for image_url in extracted_images_url:
-        print(Fore.YELLOW + "file getting downloaded")
+        print(Fore.YELLOW + "File Getting Downloaded")
         # full_path = urljoin(current, image_url)
         # res = requests.get(full_path)
         # if res.status_code == 200:
@@ -81,13 +88,13 @@ def spidey_scrap(base_url, max_depth, save_path):
     for url in urls:
         current, depth = urls.pop(0)
         print(depth,max_depth)
-        print(Fore.GREEN + "url to be scrapped : [" + str(current) + "]")
+        print(Fore.GREEN + "URL To Be Scrapped : [" + str(current) + "]")
         extracted_images_urls = extract_images(current)
         download_images(extracted_images_urls, current, save_path)
-        while depth < max_depth:
+        if depth < max_depth:
             new_urls = extract_urls(current, depth + 1, max_depth)
             urls.extend([(url, depth + 1) for url in new_urls])
-            depth += 1
+    print(Fore.WHITE + "Scrapping Finished Successfully")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
@@ -102,10 +109,18 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
+        
     if not validators.url(args.url):
         print("Invalid Url")
         exit(1)
-    if args.recursive:
-        spidey_scrap(base_url, max_depth, save_path)
+    if args.depth:
+        if args.recursive:
+            spidey_scrap(base_url, max_depth, save_path)
+        else:
+            print("you need to specify recursive scraping since -l is present")
+            exit(1)
     else:
-        spidey_scrap(base_url, 0, save_path)
+        if args.recursive:
+            spidey_scrap(base_url, max_depth, save_path)
+        else:
+            spidey_scrap(base_url, 0, save_path)
