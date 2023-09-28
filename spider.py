@@ -1,7 +1,8 @@
 import requests
-import urllib
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 import os
+import argparse
 
 
 ####                 Spider Program
@@ -12,18 +13,24 @@ import os
 ### The program will download the following extensions by default : [jpg, jpeg, png, gif, bmp].
 ####
 
-extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
+extensions = ["jpg", "jpeg", "png", "gif", "bmp"]
 
 def extract_urls(soup, base_url, max_depth):
     print("ectracting urls")
 
 def extract_images(url):
+    extracted_urls = []
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
     images_tags = soup.find_all("img")
     for image_tag in images_tags:
         image_src = image_tag.get('src')
-        if image_src['src'].split("/")[-1].split(".")[-1] in extensions:
+        if image_src == None:
+            image_src = image_tag.get('data-src')
+        print(image_src.split("/")[-1].split(".")[-1].split("?")[0])
+        # if image_src.split("/")[-1].split(".")[-1] in extensions:
+        #     extracted_urls.append(image_src)
+    return extracted_urls
 
 
 def download_images(extracted_images_url, save_path):
@@ -61,7 +68,8 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
-    if args.recursive:
-        spidey_scrap(base_url, max_depth, save_path)
-    else:
-        print("Recursive option not specified. Use '-r' to enable recursive scraping.")
+    extract_images(base_url)
+    # if args.recursive:
+    #     spidey_scrap(base_url, max_depth, save_path)
+    # else:
+    #     print("Recursive option not specified. Use '-r' to enable recursive scraping.")
