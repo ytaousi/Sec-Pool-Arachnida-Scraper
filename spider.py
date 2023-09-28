@@ -24,19 +24,21 @@ def extract_images(url):
     soup = BeautifulSoup(res.text, "html.parser")
     images_tags = soup.find_all("img")
     for image_tag in images_tags:
-        image_src = image_tag.get('src')
-        if image_src == None:
-            image_src = image_tag.get('data-src')
-        print(image_src.split("/")[-1].split(".")[-1].split("?")[0])
-        # if image_src.split("/")[-1].split(".")[-1] in extensions:
-        #     extracted_urls.append(image_src)
+        image_src = image_tag.get('src') if image_tag.get('src') != None else image_tag.get('data-src')
+        extension = image_src.split("/")[-1].split(".")[-1] if image_tag.get('src') != None else image_src.split("/")[-1].split(".")[-1].split("?")[0]
+        if extension in extensions:
+            extracted_urls.append(image_src)
     return extracted_urls
-
 
 def download_images(extracted_images_url, save_path):
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     for image_url in extracted_images_url:
+        res = requests.get(image_url)
+        if image_data.status_code == 200:
+            print("you have a nice body")
+        else:
+            print("not a valid url")
         image_data = requests.get(image_url).content
         filename = os.path.join(save_path, image_url.split("/")[-1])
         with open(filename, "wb") as file:
@@ -54,7 +56,6 @@ def spidey_scrap(base_url, max_depth, save_path):
         if depth < max_depth:
             new_urls = extract_urls(current, depth + 1, max_depth)
             urls.extend([(url, depth + 1) for url in new_urls])
-        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Spider Program to download images recursively from a website.")
@@ -68,7 +69,8 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
-    extract_images(base_url)
+    extracted_urls = extract_images(base_url)
+    download_images(extracted_urls, save_path)
     # if args.recursive:
     #     spidey_scrap(base_url, max_depth, save_path)
     # else:
