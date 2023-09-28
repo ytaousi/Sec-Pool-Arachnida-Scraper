@@ -16,7 +16,11 @@ import argparse
 extensions = ["jpg", "jpeg", "png", "gif", "bmp"]
 
 def extract_urls(soup, base_url, max_depth):
-    print("ectracting urls")
+    extracted_urls = []
+    href_tags = soup.find_all("a")
+    for href_tag in href_tags:
+        print(href_tag.get('href'))
+
 
 def extract_images(url):
     extracted_urls = []
@@ -69,8 +73,7 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
-    extracted_urls = extract_images(base_url)
-    download_images(extracted_urls, save_path)
+    extract_urls(BeautifulSoup(requests.get(base_url, timeout=5).content, "html.parser"), base_url, max_depth)
     # if args.recursive:
     #     spidey_scrap(base_url, max_depth, save_path)
     # else:
