@@ -15,23 +15,27 @@ import os
 extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
 
 def extract_urls(soup, base_url, max_depth):
-    
+    print("ectracting urls")
 
-def extract_images():
-    print("extracting images")
+def extract_images(url):
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, "html.parser")
+    images_tags = soup.find_all("img")
+
+        
 
 def download_images(extracted_images_url, save_path):
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     for image_url in extracted_images_url:
-        if image_url.split("/")[-1].split(".")[-1] in extensions:
-            filename = os.path.join(save_path, image_url.split("/")[-1])
-            with open(filename, "wb") as file:
-                file.write(image_data)
-                print(f"Downloaded: {filename}")
+        image_data = requests.get(image_url).content
+        filename = os.path.join(save_path, image_url.split("/")[-1])
+        with open(filename, "wb") as file:
+            file.write(image_data)
+            print(f"Downloaded: {filename}")
 
 def spidey_scrap(base_url, max_depth, save_path):
-    res = requests.get(url, timeout=5)
+    res = requests.get(base_url, timeout=5)
     soup = BeautifulSoup(res.content, "html.parser")
     urls = [(base_url, 0)]
     for url in urls:
