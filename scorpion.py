@@ -1,0 +1,2 @@
+def scorpion():
+    print("Metatata")

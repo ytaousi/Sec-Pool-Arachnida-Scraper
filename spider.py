@@ -21,8 +21,10 @@ def extract_images(url):
     res = requests.get(url)
     soup = BeautifulSoup(res.text, "html.parser")
     images_tags = soup.find_all("img")
+    for image_tag in images_tags:
+        image_src = image_tag.get('src')
+        if image_src['src'].split("/")[-1].split(".")[-1] in extensions:
 
-        
 
 def download_images(extracted_images_url, save_path):
     if not os.path.exists(save_path):
@@ -40,8 +42,8 @@ def spidey_scrap(base_url, max_depth, save_path):
     urls = [(base_url, 0)]
     for url in urls:
         current, depth = urls.pop(0)
-        extracted_images_url = extract_images(current)
-        download_images(extracted_images_url, save_path)
+        extracted_images_urls = extract_images(current)
+        download_images(extracted_images_urls, save_path)
         if depth < max_depth:
             new_urls = extract_urls(current, depth + 1, max_depth)
             urls.extend([(url, depth + 1) for url in new_urls])
