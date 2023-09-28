@@ -72,14 +72,14 @@ def download_images(extracted_images_url, current, save_path):
         os.mkdir(save_path)
     for image_url in extracted_images_url:
         print(Fore.YELLOW + "File Getting Downloaded")
-        # full_path = urljoin(current, image_url)
-        # res = requests.get(full_path)
-        # if res.status_code == 200:
-        #     image_data = requests.get(full_path).content
-        #     filename = os.path.join(save_path, image_url.split("/")[-1])
-        #     with open(filename, "wb") as file:
-        #         file.write(image_data)
-        #         print(f"Downloaded: {filename}")
+        full_path = urljoin(current, image_url)
+        res = requests.get(full_path)
+        if res.status_code == 200:
+            image_data = requests.get(full_path).content
+            filename = os.path.join(save_path, image_url.split("/")[-1])
+            with open(filename, "wb") as file:
+                file.write(image_data)
+                print(f"Downloaded: {filename}")
 
 def spidey_scrap(base_url, max_depth, save_path):
     res = requests.get(base_url, timeout=5)
@@ -96,6 +96,11 @@ def spidey_scrap(base_url, max_depth, save_path):
             urls.extend([(url, depth + 1) for url in new_urls])
     print(Fore.WHITE + "Scrapping Finished Successfully")
 
+def is_set(arg_name):
+    if arg_name in sys.argv:
+        return True 
+    return False
+
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     parser = argparse.ArgumentParser(description="Spider Program to download images recursively from a website.")
@@ -109,18 +114,21 @@ if __name__ == "__main__":
     max_depth = args.depth
     save_path = args.path
 
+    if args.depth < 0:
+        print("depth of recursevity should be a positif integer")
+        exit(1)
         
     if not validators.url(args.url):
         print("Invalid Url")
         exit(1)
-    if args.depth:
-        if args.recursive:
-            spidey_scrap(base_url, max_depth, save_path)
+    
+    if is_set("-l"):
+        if is_set("-r") == "false":
+            print("you need to enable recusivity since -l option was specified")
         else:
-            print("you need to specify recursive scraping since -l is present")
-            exit(1)
+            spidey_scrap(base_url, max_depth, save_path)
+    if is_set("-r"):
+        spidey_scrap(base_url, max_depth, save_path)
     else:
-        if args.recursive:
-            spidey_scrap(base_url, max_depth, save_path)
-        else:
-            spidey_scrap(base_url, 0, save_path)
+        spidey_scrap(base_url, 0, save_path)
+
