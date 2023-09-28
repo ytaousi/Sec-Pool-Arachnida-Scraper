@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import os
 import argparse
 import validators
+import re
 
 
 ####                 Spider Program
@@ -16,11 +17,18 @@ import validators
 
 extensions = ["jpg", "jpeg", "png", "gif", "bmp"]
 
-def extract_urls(soup, base_url, max_depth):
-    extracted_urls = []
-    href_tags = soup.find_all("a")
-    for href_tag in href_tags:
-        print(href_tag.get('href'))
+def extract_urls(base_url, depth, max_depth):
+    try:
+        res = requests.get(base_url)
+        if res.status_code == 200:
+            soup = BeautifulSoup(res.text, 'html.parser')
+            extract_urls = soup.find_all('a', href=re.compile('https?://'))
+            for l in extract_urls:
+                print(l.get('href'))
+            return extract_urls
+    except Exception as e:
+        print("Error during url extraction")
+        return
 
 
 def extract_images(url):
@@ -55,6 +63,7 @@ def spidey_scrap(base_url, max_depth, save_path):
     soup = BeautifulSoup(res.content, "html.parser")
     urls = [(base_url, 0)]
     for url in urls:
+        # print(url)
         current, depth = urls.pop(0)
         extracted_images_urls = extract_images(current)
         download_images(extracted_images_urls, save_path)
@@ -77,6 +86,7 @@ if __name__ == "__main__":
     if not validators.url(args.url):
         print("Invalid Url")
         exit(1)
+    extract_urls(base_url, 4, max_depth)
     # if args.recursive:
     #     spidey_scrap(base_url, max_depth, save_path)
     # else:
